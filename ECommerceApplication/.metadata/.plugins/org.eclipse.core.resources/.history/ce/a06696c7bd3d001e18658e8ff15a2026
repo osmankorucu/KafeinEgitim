@@ -1,0 +1,78 @@
+
+
+import java.util.concurrent.CompletableFuture;
+
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+@SpringBootApplication
+public class ECommerceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ECommerceApplication.class, args);
+    }
+}
+
+@Component
+class ProductService {
+    public Product createProduct(Product product) {
+        // Ürün oluşturma işlemleri
+        return product;
+    }
+}
+
+@Controller
+@RequestMapping("/products")
+class ProductController {
+    @Autowired
+    private ProductService productService;
+
+    @PostMapping
+    public @ResponseBody Product createProduct(@Validated @RequestBody Product product) {
+        return productService.createProduct(product);
+    }
+}
+
+@RestController
+@RequestMapping("/api/products")
+class ProductRestController {
+    @Autowired
+    private ProductService productService;
+
+    @PostMapping
+    public @ResponseBody CompletableFuture<Product> createProductAsync(@Validated @RequestBody Product product) {
+        return CompletableFuture.supplyAsync(() -> productService.createProduct(product));
+    }
+}
+
+class Product {
+    @NotEmpty(message = "Ürün adı boş olamaz")
+    private String name;
+
+    @Size(min = 10, message = "Açıklama en az 10 karakter olmalıdır")
+    private String description;
+
+    // Getter ve setter metotları...
+}
+
+@Component
+class EmailService {
+    @Async
+    public void sendEmail(@Email(message = "Geçerli bir e-posta adresi girin") String to, String subject, String content) {
+        // E-posta gönderme işlemleri
+    }
+}

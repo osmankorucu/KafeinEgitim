@@ -1,0 +1,111 @@
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+@SpringBootApplication
+public class ECommerceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ECommerceApplication.class, args);
+    }
+}
+
+@Entity
+class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotEmpty(message = "Ürün adı boş olamaz")
+    private String name;
+
+    @Size(min = 10, message = "Açıklama en az 10 karakter olmalıdır")
+    private String description;
+
+    // Getter ve setter metotları...
+}
+
+@Repository
+interface ProductRepository extends JpaRepository<Product, Long> {
+    List<Product> findByNameContainingIgnoreCase(String name);
+}
+
+@Service
+class ProductService {
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Transactional
+    public Product createProduct(Product product) {
+        return productRepository.save(product);
+    }
+
+    public List<Product> searchProducts(String keyword) {
+        return productRepository.findByNameContainingIgnoreCase(keyword);
+    }
+}
+
+@Controller
+@RequestMapping("/products")
+class ProductController {
+    @Autowired
+    private ProductService productService;
+
+    @PostMapping
+    public @ResponseBody Product createProduct(@Validated @RequestBody Product product) {
+        return productService.createProduct(product);
+    }
+
+    @GetMapping("/search")
+    public @ResponseBody List<Product> searchProducts(@RequestParam String keyword) {
+        return productService.searchProducts(keyword);
+    }
+}
+
+@RestController
+@RequestMapping("/api/products")
+class ProductRestController {
+    @Autowired
+    private ProductService productService;
+
+    @PostMapping
+    public @ResponseBody CompletableFuture<Product> createProductAsync(@Validated @RequestBody Product product) {
+        return CompletableFuture.supplyAsync(() -> productService.createProduct(product));
+    }
+}
+
+@Component
+class EmailService {
+    @Async
+    public void sendEmail(@Email(message = "Geçerli bir e-posta adresi girin") String to, String subject, String content) {
+        // E-posta gönderme işlemleri
+    }
+}
+
+@Configuration
+class AppConfig {
+    @Bean
+    public SomeBean someBean() {
+        return new SomeBean();
+    }
+}
+
+class SomeBean {
+    // Bean sınıfı
+}
